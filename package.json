@@ -5,7 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "biome:format": "biome format --write",
+    "biome:lint": "biome lint --write",
+    "biome:check": "biome check --write"
   },
   "keywords": [],
   "author": "",
