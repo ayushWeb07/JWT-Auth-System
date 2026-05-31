@@ -5,6 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "dev": "nodemon src/index.ts",
+    "start": "ts-node src/index.ts",
     "biome:format": "biome format --write",
     "biome:lint": "biome lint --write",
     "biome:check": "biome check --write"
