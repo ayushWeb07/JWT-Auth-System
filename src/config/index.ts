@@ -5,7 +5,7 @@ interface ServerConfig {
 }
 
 interface DbConfig {
-	DATABASE_URL: string;
+	MONGO_URI: string;
 }
 
 const serverConfig: ServerConfig = {
@@ -13,7 +13,7 @@ const serverConfig: ServerConfig = {
 };
 
 const dbConfig: DbConfig = {
-	DATABASE_URL: process.env.DATABASE_URL || "",
+	MONGO_URI: process.env.MONGO_URI || "",
 };
 
 export { serverConfig, dbConfig };
