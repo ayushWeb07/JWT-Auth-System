@@ -2,6 +2,7 @@ import express from "express";
 import morgan from "morgan";
 import { bootstrapServer } from "./utils/server/bootstrap.server.ts";
 import v1Router from "./routers/v1/index.router.ts";
+import { errorHandler } from "./middlewares/error.middleware.ts";
 
 // create server instance
 const app = express();
@@ -12,6 +13,9 @@ app.use(morgan("dev"));
 
 // setup version routes
 app.use("/api/v1", v1Router);
+
+// setup the error middleware
+app.use(errorHandler);
 
 // spin up the server + DB
 bootstrapServer(app);

@@ -7,7 +7,7 @@ import {
 } from "../utils/errors/app.error.ts";
 import CryptoJS from "crypto-js";
 import { serverConfig } from "../config/index.ts";
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
 const registerUser = async (payload: RegisterUserDTO) => {
 	try {
@@ -31,7 +31,7 @@ const registerUser = async (payload: RegisterUserDTO) => {
 			});
 
 			throw new BadRequestError(
-				"User with that username or email, already exists"
+				"User with that username or email, already exists",
 			);
 		}
 
@@ -49,11 +49,15 @@ const registerUser = async (payload: RegisterUserDTO) => {
 		});
 
 		// generate the token
-		const token= jwt.sign({
-			id: newUser._id
-		}, serverConfig.JWT_SECRET_KEY, {
-			expiresIn: "1d"
-		})
+		const token = jwt.sign(
+			{
+				id: newUser._id,
+			},
+			serverConfig.JWT_SECRET_KEY,
+			{
+				expiresIn: "1d",
+			},
+		);
 
 		logger.info("Auth: registerUser endpoint -> success", {
 			id: newUser._id,
@@ -61,8 +65,8 @@ const registerUser = async (payload: RegisterUserDTO) => {
 
 		return token;
 	} catch (error) {
-		if(error instanceof BadRequestError) {
-			throw error
+		if (error instanceof BadRequestError) {
+			throw error;
 		} else {
 			logger.error("Auth: registerUser endpoint -> failure", error);
 
