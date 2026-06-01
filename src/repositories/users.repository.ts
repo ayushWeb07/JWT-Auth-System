@@ -9,6 +9,8 @@ import {
 	InternalServerError,
 	NotFoundError,
 } from "../utils/errors/app.error.ts";
+import CryptoJS from "crypto-js";
+import { serverConfig } from "../config/index.ts";
 
 const getUserByUsernameOrEmail = async (
 	payload: GetUserByUsernameOrEmailDTO,
@@ -60,13 +62,17 @@ const getUserByUsernameOrEmail = async (
 
 const createUser = async (payload: CreateUserDTO) => {
 	try {
-		// password hashing
+		// hash the password
+		const hashedPassword = CryptoJS.AES.encrypt(
+			payload.password,
+			serverConfig.CRYPTO_SECRET_KEY,
+		).toString();
 
 		// insert the user
 		const newUser = await userModel.create({
 			username: payload.username,
 			email: payload.email,
-			password: payload.password,
+			password: hashedPassword,
 		});
 
 		logger.info("Users: createUser endpoint -> success", {
