@@ -1,16 +1,14 @@
 import { Router } from "express";
 import * as authController from "../../controllers/auth.controller.ts";
-
+import * as authValidator from "../../validators/auth.validator.ts";
 import { validateRequestBody } from "../../validators/request.validator.ts";
-
-import * as usersValidator from "../../validators/users.validator.ts";
 
 const router = Router();
 
 router.post(
 	"/register",
-	validateRequestBody(usersValidator.createUserSchema),
-	authController.createUser,
+	validateRequestBody(authValidator.registerSchema),
+	authController.registerUser,
 );
 
 export default router;
