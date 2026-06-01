@@ -31,7 +31,7 @@ const registerUser = async (payload: RegisterUserDTO) => {
 			});
 
 			throw new BadRequestError(
-				"User with that username or email, already exists",
+				"User with that username or email, already exists"
 			);
 		}
 
@@ -61,12 +61,16 @@ const registerUser = async (payload: RegisterUserDTO) => {
 
 		return token;
 	} catch (error) {
-		logger.error("Auth: registerUser endpoint -> failure", error);
+		if(error instanceof BadRequestError) {
+			throw error
+		} else {
+			logger.error("Auth: registerUser endpoint -> failure", error);
 
-		throw new InternalServerError(
-			"Something went wrong while creating a new user",
-			error instanceof Error ? error.stack : undefined,
-		);
+			throw new InternalServerError(
+				"Something went wrong while creating a new user",
+				error instanceof Error ? error.stack : undefined,
+			);
+		}
 	}
 };
 
