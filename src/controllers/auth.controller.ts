@@ -38,4 +38,18 @@ const loginUser = async (req: Request, res: Response) => {
 	});
 };
 
-export { registerUser, loginUser };
+const refreshAccessToken = async (req: Request, res: Response) => {
+	const refreshToken: string | undefined = req.cookies.token;
+
+	const newAccessToken = await authService.refreshAccessToken({
+		token: refreshToken,
+	});
+
+	res.status(StatusCodes.OK).json({
+		success: true,
+		message: "Tokens have been successfully refreshed",
+		token: newAccessToken,
+	});
+};
+
+export { registerUser, loginUser, refreshAccessToken };

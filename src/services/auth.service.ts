@@ -1,5 +1,9 @@
 import * as authRepository from "../repositories/auth.repository.ts";
-import type { LoginUserDTO, RegisterUserDTO } from "../dtos/auth.dto.ts";
+import type {
+	LoginUserDTO,
+	RefreshAccessTokenDTO,
+	RegisterUserDTO,
+} from "../dtos/auth.dto.ts";
 
 interface AuthUserResult {
 	accessToken: string;
@@ -18,4 +22,10 @@ const loginUser = async (payload: LoginUserDTO) => {
 	return result;
 };
 
-export { registerUser, loginUser };
+const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
+	// generate new access token using the refresh token
+	const token = await authRepository.refreshAccessToken(payload);
+	return token;
+};
+
+export { registerUser, loginUser, refreshAccessToken };

@@ -9,3 +9,7 @@ export interface LoginUserDTO {
 	email: string;
 	password: string;
 }
+
+export interface RefreshAccessTokenDTO {
+	token: string | undefined;
+}

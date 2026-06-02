@@ -1,13 +1,23 @@
-import type { LoginUserDTO, RegisterUserDTO } from "../dtos/auth.dto.ts";
+import type {
+	LoginUserDTO,
+	RegisterUserDTO,
+	RefreshAccessTokenDTO,
+} from "../dtos/auth.dto.ts";
 import { userModel } from "../database/models/user.model.ts";
 import { logger } from "../config/logger.config.ts";
 import {
 	BadRequestError,
+	ForbiddenError,
 	InternalServerError,
+	UnauthorizedError,
 } from "../utils/errors/app.error.ts";
 import CryptoJS from "crypto-js";
 import { serverConfig } from "../config/index.ts";
-import jwt from "jsonwebtoken";
+import jwt, { type JwtPayload } from "jsonwebtoken";
+
+interface DecodedJwtPayload extends JwtPayload {
+	userId: string;
+}
 
 const registerUser = async (payload: RegisterUserDTO) => {
 	try {
@@ -184,4 +194,77 @@ const loginUser = async (payload: LoginUserDTO) => {
 	}
 };
 
-export { registerUser, loginUser };
+const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
+	try {
+		if (!payload.token) {
+			logger.error("Users: refreshAccessToken endpoint -> failure", {
+				error: "Access denied: Please login again as the tokens are missing",
+			});
+
+			throw new UnauthorizedError(
+				"Access denied: Please login again as the tokens are missing",
+			);
+		}
+
+		// verify the refresh token
+		const decoded = jwt.verify(
+			payload.token,
+			serverConfig.REFRESH_SECRET_KEY,
+		) as DecodedJwtPayload;
+
+		// fetch the user
+		const user = await userModel.findById(decoded.userId);
+
+		if (!user) {
+			logger.error("Users: refreshAccessToken endpoint -> failure", {
+				error: "User doesn't exist",
+				id: decoded.userId,
+			});
+
+			throw new BadRequestError("User with that refresh token, doesn't exist");
+		}
+
+		// validate the refresh tokens
+		if (user.refreshToken != payload.token) {
+			logger.error("Users: refreshAccessToken endpoint -> failure", {
+				error: "Invalid token has been provided",
+			});
+
+			throw new ForbiddenError("Invalid token has been provided");
+		}
+
+		// generate the new access token
+		const accessToken = jwt.sign(
+			{
+				userId: user._id,
+			},
+			serverConfig.ACCESS_SECRET_KEY,
+			{
+				expiresIn: "15m",
+			},
+		);
+
+		logger.info("Auth: refreshAccessToken endpoint -> success", {
+			userId: user._id,
+		});
+
+		return accessToken;
+	} catch (error) {
+		if (
+			error instanceof UnauthorizedError ||
+			error instanceof BadRequestError ||
+			error instanceof ForbiddenError
+		) {
+			throw error;
+		} else {
+			logger.error("Auth: refreshAccessToken endpoint -> failure", error);
+
+			throw new InternalServerError(
+				"Something went wrong while refreshing the token",
+				error instanceof Error ? error.stack : undefined,
+			);
+		}
+	}
+};
+
+export { registerUser, loginUser, refreshAccessToken };
