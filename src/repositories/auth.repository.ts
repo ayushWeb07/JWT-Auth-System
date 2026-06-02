@@ -13,6 +13,7 @@ import {
 import CryptoJS from "crypto-js";
 import { serverConfig } from "../config/index.ts";
 import jwt, { type JwtPayload } from "jsonwebtoken";
+import {sessionModel} from "../database/models/session.model.ts";
 
 interface DecodedJwtPayload extends JwtPayload {
 	userId: string;
@@ -78,8 +79,20 @@ const registerUser = async (payload: RegisterUserDTO) => {
 			},
 		);
 
+		// generate the session
+		const hashedRefreshToken = CryptoJS.AES.encrypt(
+			refreshToken,
+			serverConfig.CRYPTO_SECRET_KEY,
+		).toString();
+
+		const newSession= await sessionModel.create({
+			userId: newUser._id,
+			hashedRefreshToken
+		})
+
 		logger.info("Auth: registerUser endpoint -> success", {
 			userId: newUser._id,
+			sessionId: newSession._id
 		});
 
 		return {
