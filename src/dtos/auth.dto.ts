@@ -13,3 +13,7 @@ export interface LoginUserDTO {
 export interface RefreshAccessTokenDTO {
 	token: string | undefined;
 }
+
+export interface LogoutUserDTO {
+	token: string | undefined;
+}

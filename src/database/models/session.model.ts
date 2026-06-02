@@ -5,7 +5,7 @@ const sessionSchema = new mongoose.Schema(
 	{
 		userId: {
 			type: mongoose.Schema.Types.ObjectId,
-			ref: "users"
+			ref: "users",
 		},
 
 		hashedRefreshToken: {
@@ -15,7 +15,7 @@ const sessionSchema = new mongoose.Schema(
 
 		revoked: {
 			type: Boolean,
-			default: false
+			default: false,
 		},
 	},
 	{

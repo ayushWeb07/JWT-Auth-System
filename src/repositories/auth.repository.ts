@@ -2,6 +2,7 @@ import type {
 	LoginUserDTO,
 	RegisterUserDTO,
 	RefreshAccessTokenDTO,
+	LogoutUserDTO,
 } from "../dtos/auth.dto.ts";
 import { userModel } from "../database/models/user.model.ts";
 import { logger } from "../config/logger.config.ts";
@@ -13,7 +14,7 @@ import {
 import CryptoJS from "crypto-js";
 import { serverConfig } from "../config/index.ts";
 import jwt, { type JwtPayload } from "jsonwebtoken";
-import {sessionModel} from "../database/models/session.model.ts";
+import { sessionModel } from "../database/models/session.model.ts";
 
 interface DecodedJwtPayload extends JwtPayload {
 	userId: string;
@@ -80,19 +81,16 @@ const registerUser = async (payload: RegisterUserDTO) => {
 		);
 
 		// generate the session
-		const hashedRefreshToken = CryptoJS.AES.encrypt(
-			refreshToken,
-			serverConfig.CRYPTO_SECRET_KEY,
-		).toString();
+		const hashedRefreshToken = CryptoJS.SHA256(refreshToken).toString();
 
-		const newSession= await sessionModel.create({
+		const newSession = await sessionModel.create({
 			userId: newUser._id,
-			hashedRefreshToken
-		})
+			hashedRefreshToken,
+		});
 
 		logger.info("Auth: registerUser endpoint -> success", {
 			userId: newUser._id,
-			sessionId: newSession._id
+			sessionId: newSession._id,
 		});
 
 		return {
@@ -261,4 +259,66 @@ const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
 	}
 };
 
-export { registerUser, loginUser, refreshAccessToken };
+const logoutUser = async (payload: LogoutUserDTO) => {
+	try {
+		if (!payload.token) {
+			logger.error("Users: logoutUser endpoint -> failure", {
+				error: "Access denied: Please login again as the tokens are missing",
+			});
+
+			throw new UnauthorizedError(
+				"Access denied: Please login again as the tokens are missing",
+			);
+		}
+
+		// verify the refresh token
+		const decoded = jwt.verify(
+			payload.token,
+			serverConfig.REFRESH_SECRET_KEY,
+		) as DecodedJwtPayload;
+
+		// find the session
+		const hashedRefreshToken = CryptoJS.SHA256(payload.token).toString();
+
+		const session = await sessionModel.findOne({
+			hashedRefreshToken,
+			revoked: false,
+			userId: decoded.userId,
+		});
+
+		if (!session) {
+			logger.error("Users: logoutUser endpoint -> failure", {
+				error: "Such session doesn't exist",
+				id: decoded.userId,
+			});
+
+			throw new BadRequestError(
+				"Session with that refresh token doesn't exist",
+			);
+		}
+
+		// revoke the session and clear cookie
+		session.revoked = true;
+		await session.save();
+
+		logger.info("Auth: logoutUser endpoint -> success", {
+			sessionId: session._id,
+		});
+	} catch (error) {
+		if (
+			error instanceof UnauthorizedError ||
+			error instanceof BadRequestError
+		) {
+			throw error;
+		} else {
+			logger.error("Auth: logoutUser endpoint -> failure", error);
+
+			throw new InternalServerError(
+				"Something went wrong while logging out",
+				error instanceof Error ? error.stack : undefined,
+			);
+		}
+	}
+};
+
+export { registerUser, loginUser, refreshAccessToken, logoutUser };

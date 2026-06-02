@@ -1,6 +1,7 @@
 import * as authRepository from "../repositories/auth.repository.ts";
 import type {
 	LoginUserDTO,
+	LogoutUserDTO,
 	RefreshAccessTokenDTO,
 	RegisterUserDTO,
 } from "../dtos/auth.dto.ts";
@@ -28,4 +29,9 @@ const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
 	return token;
 };
 
-export { registerUser, loginUser, refreshAccessToken };
+const logoutUser = async (payload: LogoutUserDTO) => {
+	// logout the user
+	await authRepository.logoutUser(payload);
+};
+
+export { registerUser, loginUser, refreshAccessToken, logoutUser };

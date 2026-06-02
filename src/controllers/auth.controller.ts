@@ -52,4 +52,20 @@ const refreshAccessToken = async (req: Request, res: Response) => {
 	});
 };
 
-export { registerUser, loginUser, refreshAccessToken };
+const logoutUser = async (req: Request, res: Response) => {
+	const refreshToken: string | undefined = req.cookies.token;
+
+	await authService.logoutUser({
+		token: refreshToken,
+	});
+
+	// clear the cookies to remove the refresh token
+	res.clearCookie("token");
+
+	res.status(StatusCodes.OK).json({
+		success: true,
+		message: "User has been successfully logged out",
+	});
+};
+
+export { registerUser, loginUser, refreshAccessToken, logoutUser };
