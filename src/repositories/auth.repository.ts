@@ -7,7 +7,6 @@ import { userModel } from "../database/models/user.model.ts";
 import { logger } from "../config/logger.config.ts";
 import {
 	BadRequestError,
-	ForbiddenError,
 	InternalServerError,
 	UnauthorizedError,
 } from "../utils/errors/app.error.ts";
@@ -78,10 +77,6 @@ const registerUser = async (payload: RegisterUserDTO) => {
 				expiresIn: "7d",
 			},
 		);
-
-		// save the refresh token in db
-		newUser.refreshToken = refreshToken;
-		await newUser.save();
 
 		logger.info("Auth: registerUser endpoint -> success", {
 			userId: newUser._id,
@@ -168,10 +163,6 @@ const loginUser = async (payload: LoginUserDTO) => {
 			},
 		);
 
-		// update the refresh token in db
-		user.refreshToken = refreshToken;
-		await user.save();
-
 		logger.info("Auth: loginUser endpoint -> success", {
 			userId: user._id,
 		});
@@ -224,15 +215,6 @@ const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
 			throw new BadRequestError("User with that refresh token, doesn't exist");
 		}
 
-		// validate the refresh tokens
-		if (user.refreshToken != payload.token) {
-			logger.error("Users: refreshAccessToken endpoint -> failure", {
-				error: "Invalid token has been provided",
-			});
-
-			throw new ForbiddenError("Invalid token has been provided");
-		}
-
 		// generate the new access token
 		const accessToken = jwt.sign(
 			{
@@ -252,8 +234,7 @@ const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
 	} catch (error) {
 		if (
 			error instanceof UnauthorizedError ||
-			error instanceof BadRequestError ||
-			error instanceof ForbiddenError
+			error instanceof BadRequestError
 		) {
 			throw error;
 		} else {
