@@ -5,6 +5,7 @@ import {
 } from "../utils/errors/app.error.ts";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import { serverConfig } from "../config/index.ts";
+import { logger } from "../config/logger.config.ts";
 
 interface DecodedJwtPayload extends JwtPayload {
 	userId: string;
@@ -16,6 +17,10 @@ const authHandler = (req: Request, res: Response, next: NextFunction) => {
 		const authHeader = req.headers["authorization"];
 
 		if (!authHeader || !authHeader.startsWith("Bearer ")) {
+			logger.error("Auth handler -> failure", {
+				error: "Access denied: No or invalid token has been provided",
+			});
+
 			throw new UnauthorizedError(
 				"Access denied: No or invalid token has been provided",
 			);
@@ -35,6 +40,10 @@ const authHandler = (req: Request, res: Response, next: NextFunction) => {
 		if (error instanceof UnauthorizedError) {
 			throw error;
 		} else {
+			logger.error("Auth handler -> failure", {
+				error: "Access denied: Invalid or expired token has been provided",
+			});
+
 			throw new ForbiddenError(
 				"Access denied: Invalid or expired token has been provided",
 			);
