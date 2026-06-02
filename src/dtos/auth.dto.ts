@@ -3,3 +3,9 @@ export interface RegisterUserDTO {
 	email: string;
 	password: string;
 }
+
+export interface LoginUserDTO {
+	username: string;
+	email: string;
+	password: string;
+}

@@ -12,4 +12,14 @@ const registerUser = async (req: Request, res: Response) => {
 	});
 };
 
-export { registerUser };
+const loginUser = async (req: Request, res: Response) => {
+	const token = await authService.loginUser(req.body);
+
+	res.status(StatusCodes.OK).json({
+		success: true,
+		message: "User has been successfully logged in",
+		token,
+	});
+};
+
+export { registerUser, loginUser };
