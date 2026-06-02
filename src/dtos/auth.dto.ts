@@ -17,3 +17,7 @@ export interface RefreshAccessTokenDTO {
 export interface LogoutUserDTO {
 	token: string | undefined;
 }
+
+export interface LogoutUserFromAllSessionsDTO {
+	token: string | undefined;
+}

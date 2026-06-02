@@ -68,4 +68,26 @@ const logoutUser = async (req: Request, res: Response) => {
 	});
 };
 
-export { registerUser, loginUser, refreshAccessToken, logoutUser };
+const logoutUserFromAllSessions = async (req: Request, res: Response) => {
+	const refreshToken: string | undefined = req.cookies.token;
+
+	await authService.logoutUserFromAllSessions({
+		token: refreshToken,
+	});
+
+	// clear the cookies to remove the refresh token
+	res.clearCookie("token");
+
+	res.status(StatusCodes.OK).json({
+		success: true,
+		message: "User has been successfully logged out from all the sessions",
+	});
+};
+
+export {
+	registerUser,
+	loginUser,
+	refreshAccessToken,
+	logoutUser,
+	logoutUserFromAllSessions,
+};

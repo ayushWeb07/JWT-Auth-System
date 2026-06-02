@@ -3,6 +3,7 @@ import type {
 	RegisterUserDTO,
 	RefreshAccessTokenDTO,
 	LogoutUserDTO,
+	LogoutUserFromAllSessionsDTO,
 } from "../dtos/auth.dto.ts";
 import { userModel } from "../database/models/user.model.ts";
 import { logger } from "../config/logger.config.ts";
@@ -348,4 +349,61 @@ const logoutUser = async (payload: LogoutUserDTO) => {
 	}
 };
 
-export { registerUser, loginUser, refreshAccessToken, logoutUser };
+const logoutUserFromAllSessions = async (
+	payload: LogoutUserFromAllSessionsDTO,
+) => {
+	try {
+		if (!payload.token) {
+			logger.error("Auth: logoutUserFromAllSessions endpoint -> failure", {
+				error: "Access denied: Please login again as the tokens are missing",
+			});
+
+			throw new UnauthorizedError(
+				"Access denied: Please login again as the tokens are missing",
+			);
+		}
+
+		// verify the refresh token
+		const decoded = jwt.verify(
+			payload.token,
+			serverConfig.REFRESH_SECRET_KEY,
+		) as DecodedJwtPayload;
+
+		// find all the relevant sessions session and revoke them
+		await sessionModel.updateMany(
+			{
+				revoked: false,
+				userId: decoded.userId,
+			},
+			{
+				$set: {
+					revoked: true,
+				},
+			},
+		);
+
+		logger.info("Auth: logoutUserFromAllSessions endpoint -> success");
+	} catch (error) {
+		if (error instanceof UnauthorizedError) {
+			throw error;
+		} else {
+			logger.error(
+				"Auth: logoutUserFromAllSessions endpoint -> failure",
+				error,
+			);
+
+			throw new InternalServerError(
+				"Something went wrong while logging out from all the sessions",
+				error instanceof Error ? error.stack : undefined,
+			);
+		}
+	}
+};
+
+export {
+	registerUser,
+	loginUser,
+	refreshAccessToken,
+	logoutUser,
+	logoutUserFromAllSessions,
+};
