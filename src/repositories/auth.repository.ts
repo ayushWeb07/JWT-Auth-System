@@ -174,8 +174,17 @@ const loginUser = async (payload: LoginUserDTO) => {
 			},
 		);
 
+		// generate the session
+		const hashedRefreshToken = CryptoJS.SHA256(refreshToken).toString();
+
+		const newSession = await sessionModel.create({
+			userId: user._id,
+			hashedRefreshToken,
+		});
+
 		logger.info("Auth: loginUser endpoint -> success", {
 			userId: user._id,
+			sessionId: newSession._id,
 		});
 
 		return {
