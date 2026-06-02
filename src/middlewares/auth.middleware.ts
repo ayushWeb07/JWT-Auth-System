@@ -18,11 +18,11 @@ const authHandler = (req: Request, res: Response, next: NextFunction) => {
 
 		if (!authHeader || !authHeader.startsWith("Bearer ")) {
 			logger.error("Auth handler -> failure", {
-				error: "Access denied: No or invalid token has been provided",
+				error: "Access denied: Invalid token has been provided",
 			});
 
 			throw new UnauthorizedError(
-				"Access denied: No or invalid token has been provided",
+				"Access denied: Invalid token has been provided",
 			);
 		}
 
@@ -30,7 +30,7 @@ const authHandler = (req: Request, res: Response, next: NextFunction) => {
 		const token = authHeader.split(" ")[1];
 		const decoded = jwt.verify(
 			token,
-			serverConfig.JWT_SECRET_KEY,
+			serverConfig.ACCESS_SECRET_KEY,
 		) as DecodedJwtPayload;
 
 		// attach the user id to req. and then call the next middlewares
@@ -41,11 +41,11 @@ const authHandler = (req: Request, res: Response, next: NextFunction) => {
 			throw error;
 		} else {
 			logger.error("Auth handler -> failure", {
-				error: "Access denied: Invalid or expired token has been provided",
+				error: "Access denied: Invalid token has been provided",
 			});
 
 			throw new ForbiddenError(
-				"Access denied: Invalid or expired token has been provided",
+				"Access denied: Invalid token has been provided",
 			);
 		}
 	}
