@@ -4,7 +4,7 @@ import * as usersService from "../services/users.service.ts";
 
 const getCurrentUser = async (req: Request, res: Response) => {
 	const user = await usersService.getCurrentUser({
-		userId: req.userId,
+		userId: req.userId!,
 	});
 
 	res.status(StatusCodes.OK).json({
