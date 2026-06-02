@@ -6,9 +6,9 @@ const registerUser = async (req: Request, res: Response) => {
 	const token = await authService.registerUser(req.body);
 
 	res.status(StatusCodes.CREATED).json({
+		success: true,
 		message: "User has been successfully registered",
 		token,
-		success: true,
 	});
 };
 

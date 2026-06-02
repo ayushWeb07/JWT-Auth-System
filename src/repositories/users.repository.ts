@@ -1,5 +1,8 @@
 // get user by username or email
-import type { GetUserByUsernameOrEmailDTO } from "../dtos/user.dto.ts";
+import type {
+	GetCurrentUserDTO,
+	GetUserByUsernameOrEmailDTO,
+} from "../dtos/user.dto.ts";
 import { userModel } from "../database/models/user.model.ts";
 import { logger } from "../config/logger.config.ts";
 import {
@@ -33,7 +36,7 @@ const getUserByUsernameOrEmail = async (
 			throw new NotFoundError("User not found");
 		} else {
 			logger.info("Users: getUserByUsernameOrEmail endpoint -> success", {
-				id: user._id,
+				userId: user._id,
 			});
 
 			return user;
@@ -55,4 +58,37 @@ const getUserByUsernameOrEmail = async (
 	}
 };
 
-export { getUserByUsernameOrEmail };
+const getCurrentUser = async (payload: GetCurrentUserDTO) => {
+	try {
+		// fetch the user
+		const user = await userModel.findById(payload.userId).select("-password");
+
+		if (!user) {
+			logger.error("Users: getCurrentUser endpoint -> failure", {
+				error: "User not found",
+				userId: payload.userId,
+			});
+
+			throw new NotFoundError("User not found");
+		} else {
+			logger.info("Users: getCurrentUser endpoint -> success", {
+				userId: payload.userId,
+			});
+
+			return user;
+		}
+	} catch (error) {
+		if (error instanceof NotFoundError) {
+			throw error;
+		} else {
+			logger.error("Users: getCurrentUser endpoint -> failure", error);
+
+			throw new InternalServerError(
+				"Something went wrong while getting the current user",
+				error instanceof Error ? error.stack : undefined,
+			);
+		}
+	}
+};
+
+export { getUserByUsernameOrEmail, getCurrentUser };
