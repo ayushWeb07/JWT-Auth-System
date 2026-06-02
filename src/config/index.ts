@@ -2,18 +2,22 @@ import "dotenv/config";
 
 interface ServerConfig {
 	PORT: number;
+	CRYPTO_SECRET_KEY: string;
+	JWT_SECRET_KEY: string;
 }
 
 interface DbConfig {
-	DATABASE_URL: string;
+	MONGO_URI: string;
 }
 
 const serverConfig: ServerConfig = {
 	PORT: Number(process.env.PORT) || 3000,
+	CRYPTO_SECRET_KEY: process.env.CRYPTO_SECRET_KEY || "",
+	JWT_SECRET_KEY: process.env.JWT_SECRET_KEY || "",
 };
 
 const dbConfig: DbConfig = {
-	DATABASE_URL: process.env.DATABASE_URL || "",
+	MONGO_URI: process.env.MONGO_URI || "",
 };
 
 export { serverConfig, dbConfig };
