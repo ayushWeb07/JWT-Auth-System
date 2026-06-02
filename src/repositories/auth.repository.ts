@@ -35,7 +35,7 @@ const registerUser = async (payload: RegisterUserDTO) => {
 		});
 
 		if (existingUser) {
-			logger.error("Users: registerUser endpoint -> failure", {
+			logger.error("Auth: registerUser endpoint -> failure", {
 				error: "User already exists",
 				username: payload.username,
 				email: payload.email,
@@ -126,7 +126,7 @@ const loginUser = async (payload: LoginUserDTO) => {
 		});
 
 		if (!user) {
-			logger.error("Users: loginUser endpoint -> failure", {
+			logger.error("Auth: loginUser endpoint -> failure", {
 				error: "User doesn't exist",
 				username: payload.username,
 				email: payload.email,
@@ -144,7 +144,7 @@ const loginUser = async (payload: LoginUserDTO) => {
 		).toString(CryptoJS.enc.Utf8);
 
 		if (orgPassword != payload.password) {
-			logger.error("Users: loginUser endpoint -> failure", {
+			logger.error("Auth: loginUser endpoint -> failure", {
 				error: "Incorrect password has been provided",
 				username: payload.username,
 				email: payload.email,
@@ -199,7 +199,7 @@ const loginUser = async (payload: LoginUserDTO) => {
 const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
 	try {
 		if (!payload.token) {
-			logger.error("Users: refreshAccessToken endpoint -> failure", {
+			logger.error("Auth: refreshAccessToken endpoint -> failure", {
 				error: "Access denied: Please login again as the tokens are missing",
 			});
 
@@ -218,12 +218,31 @@ const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
 		const user = await userModel.findById(decoded.userId);
 
 		if (!user) {
-			logger.error("Users: refreshAccessToken endpoint -> failure", {
+			logger.error("Auth: refreshAccessToken endpoint -> failure", {
 				error: "User doesn't exist",
 				id: decoded.userId,
 			});
 
 			throw new BadRequestError("User with that refresh token, doesn't exist");
+		}
+
+		// fetch the session
+		const hashedRefreshToken = CryptoJS.SHA256(payload.token).toString();
+
+		const session = await sessionModel.findOne({
+			hashedRefreshToken,
+			revoked: false,
+			userId: decoded.userId,
+		});
+
+		if (!session) {
+			logger.error("Auth: refreshAccessToken endpoint -> failure", {
+				error: "Such session doesn't exist",
+			});
+
+			throw new BadRequestError(
+				"Session with that refresh token doesn't exist",
+			);
 		}
 
 		// generate the new access token
@@ -262,7 +281,7 @@ const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
 const logoutUser = async (payload: LogoutUserDTO) => {
 	try {
 		if (!payload.token) {
-			logger.error("Users: logoutUser endpoint -> failure", {
+			logger.error("Auth: logoutUser endpoint -> failure", {
 				error: "Access denied: Please login again as the tokens are missing",
 			});
 
@@ -287,9 +306,8 @@ const logoutUser = async (payload: LogoutUserDTO) => {
 		});
 
 		if (!session) {
-			logger.error("Users: logoutUser endpoint -> failure", {
+			logger.error("Auth: logoutUser endpoint -> failure", {
 				error: "Such session doesn't exist",
-				id: decoded.userId,
 			});
 
 			throw new BadRequestError(
