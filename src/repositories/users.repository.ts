@@ -33,7 +33,7 @@ const getUserByUsernameOrEmail = async (
 			throw new NotFoundError("User not found");
 		} else {
 			logger.info("Users: getUserByUsernameOrEmail endpoint -> success", {
-				id: user._id,
+				userId: user._id,
 			});
 
 			return user;

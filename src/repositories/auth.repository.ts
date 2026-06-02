@@ -51,7 +51,7 @@ const registerUser = async (payload: RegisterUserDTO) => {
 		// generate the token
 		const token = jwt.sign(
 			{
-				id: newUser._id,
+				userId: newUser._id,
 			},
 			serverConfig.JWT_SECRET_KEY,
 			{
@@ -60,7 +60,7 @@ const registerUser = async (payload: RegisterUserDTO) => {
 		);
 
 		logger.info("Auth: registerUser endpoint -> success", {
-			id: newUser._id,
+			userId: newUser._id,
 		});
 
 		return token;
