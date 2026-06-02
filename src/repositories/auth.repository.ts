@@ -1,4 +1,4 @@
-import { LoginUserDTO, RegisterUserDTO } from "../dtos/auth.dto.ts";
+import type { LoginUserDTO, RegisterUserDTO } from "../dtos/auth.dto.ts";
 import { userModel } from "../database/models/user.model.ts";
 import { logger } from "../config/logger.config.ts";
 import {
@@ -69,7 +69,7 @@ const registerUser = async (payload: RegisterUserDTO) => {
 			},
 		);
 
-		// update the refresh token in db
+		// save the refresh token in db
 		newUser.refreshToken = refreshToken;
 		await newUser.save();
 
@@ -77,7 +77,10 @@ const registerUser = async (payload: RegisterUserDTO) => {
 			userId: newUser._id,
 		});
 
-		return accessToken;
+		return {
+			accessToken,
+			refreshToken,
+		};
 	} catch (error) {
 		if (error instanceof BadRequestError) {
 			throw error;
@@ -96,7 +99,7 @@ const loginUser = async (payload: LoginUserDTO) => {
 	try {
 		// fetch the user
 		const user = await userModel.findOne({
-			$or: [
+			$and: [
 				{
 					username: payload.username,
 				},
@@ -163,7 +166,10 @@ const loginUser = async (payload: LoginUserDTO) => {
 			userId: user._id,
 		});
 
-		return accessToken;
+		return {
+			accessToken,
+			refreshToken,
+		};
 	} catch (error) {
 		if (error instanceof BadRequestError) {
 			throw error;
