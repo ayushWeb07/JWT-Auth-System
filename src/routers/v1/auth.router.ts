@@ -11,4 +11,12 @@ router.post(
 	authController.registerUser,
 );
 
+router.post(
+	"/login",
+	validateRequestBody(authValidator.loginSchema),
+	authController.loginUser,
+);
+
+router.post("/refresh", authController.refreshAccessToken);
+
 export default router;

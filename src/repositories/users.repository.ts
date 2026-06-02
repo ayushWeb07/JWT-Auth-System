@@ -61,7 +61,9 @@ const getUserByUsernameOrEmail = async (
 const getCurrentUser = async (payload: GetCurrentUserDTO) => {
 	try {
 		// fetch the user
-		const user = await userModel.findById(payload.userId).select("-password");
+		const user = await userModel
+			.findById(payload.userId)
+			.select("-password -refreshToken");
 
 		if (!user) {
 			logger.error("Users: getCurrentUser endpoint -> failure", {
