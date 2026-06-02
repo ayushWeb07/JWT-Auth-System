@@ -48,22 +48,36 @@ const registerUser = async (payload: RegisterUserDTO) => {
 			password: hashedPassword,
 		});
 
-		// generate the token
-		const token = jwt.sign(
+		// generate the tokens
+		const accessToken = jwt.sign(
 			{
 				userId: newUser._id,
 			},
-			serverConfig.JWT_SECRET_KEY,
+			serverConfig.ACCESS_SECRET_KEY,
 			{
-				expiresIn: "1d",
+				expiresIn: "15m",
 			},
 		);
+
+		const refreshToken = jwt.sign(
+			{
+				userId: newUser._id,
+			},
+			serverConfig.REFRESH_SECRET_KEY,
+			{
+				expiresIn: "7d",
+			},
+		);
+
+		// update the refresh token in db
+		newUser.refreshToken= refreshToken
+		await newUser.save()
 
 		logger.info("Auth: registerUser endpoint -> success", {
 			userId: newUser._id,
 		});
 
-		return token;
+		return accessToken;
 	} catch (error) {
 		if (error instanceof BadRequestError) {
 			throw error;
