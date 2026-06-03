@@ -1,8 +1,12 @@
 import * as authRepository from "../repositories/auth.repository.ts";
 import type {
 	LoginUserDTO,
+	LogoutUserDTO,
+	LogoutUserFromAllSessionsDTO,
 	RefreshAccessTokenDTO,
 	RegisterUserDTO,
+	SendOtpForVerificationDTO,
+	VerifyOtpDTO,
 } from "../dtos/auth.dto.ts";
 
 interface AuthUserResult {
@@ -11,9 +15,9 @@ interface AuthUserResult {
 }
 
 const registerUser = async (payload: RegisterUserDTO) => {
-	// register the user and generate the token
-	const result = (await authRepository.registerUser(payload)) as AuthUserResult;
-	return result;
+	// register the user
+	const user = await authRepository.registerUser(payload);
+	return user;
 };
 
 const loginUser = async (payload: LoginUserDTO) => {
@@ -28,4 +32,34 @@ const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
 	return token;
 };
 
-export { registerUser, loginUser, refreshAccessToken };
+const logoutUser = async (payload: LogoutUserDTO) => {
+	// logout the user
+	await authRepository.logoutUser(payload);
+};
+
+const logoutUserFromAllSessions = async (
+	payload: LogoutUserFromAllSessionsDTO,
+) => {
+	// logout the user from all sessions
+	await authRepository.logoutUserFromAllSessions(payload);
+};
+
+const sendOtpForVerification = async (payload: SendOtpForVerificationDTO) => {
+	// send otp for verification
+	await authRepository.sendOtpForVerification(payload);
+};
+
+const verifyOtp = async (payload: VerifyOtpDTO) => {
+	// verify the otp
+	await authRepository.verifyOtp(payload);
+};
+
+export {
+	registerUser,
+	loginUser,
+	refreshAccessToken,
+	logoutUser,
+	logoutUserFromAllSessions,
+	sendOtpForVerification,
+	verifyOtp,
+};

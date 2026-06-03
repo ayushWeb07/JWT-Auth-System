@@ -13,3 +13,20 @@ export interface LoginUserDTO {
 export interface RefreshAccessTokenDTO {
 	token: string | undefined;
 }
+
+export interface LogoutUserDTO {
+	token: string | undefined;
+}
+
+export interface LogoutUserFromAllSessionsDTO {
+	token: string | undefined;
+}
+
+export interface SendOtpForVerificationDTO {
+	email: string;
+}
+
+export interface VerifyOtpDTO {
+	email: string;
+	otp: string;
+}
