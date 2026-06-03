@@ -9,6 +9,7 @@ import { userModel } from "../database/models/user.model.ts";
 import { logger } from "../config/logger.config.ts";
 import {
 	BadRequestError,
+	ForbiddenError,
 	InternalServerError,
 	UnauthorizedError,
 } from "../utils/errors/app.error.ts";
@@ -61,43 +62,39 @@ const registerUser = async (payload: RegisterUserDTO) => {
 		});
 
 		// generate the tokens
-		const accessToken = jwt.sign(
-			{
-				userId: newUser._id,
-			},
-			serverConfig.ACCESS_SECRET_KEY,
-			{
-				expiresIn: "15m",
-			},
-		);
+		// const accessToken = jwt.sign(
+		// 	{
+		// 		userId: newUser._id,
+		// 	},
+		// 	serverConfig.ACCESS_SECRET_KEY,
+		// 	{
+		// 		expiresIn: "15m",
+		// 	},
+		// );
 
-		const refreshToken = jwt.sign(
-			{
-				userId: newUser._id,
-			},
-			serverConfig.REFRESH_SECRET_KEY,
-			{
-				expiresIn: "7d",
-			},
-		);
+		// const refreshToken = jwt.sign(
+		// 	{
+		// 		userId: newUser._id,
+		// 	},
+		// 	serverConfig.REFRESH_SECRET_KEY,
+		// 	{
+		// 		expiresIn: "7d",
+		// 	},
+		// );
 
 		// generate the session
-		const hashedRefreshToken = CryptoJS.SHA256(refreshToken).toString();
+		// const hashedRefreshToken = CryptoJS.SHA256(refreshToken).toString();
 
-		const newSession = await sessionModel.create({
-			userId: newUser._id,
-			hashedRefreshToken,
-		});
+		// const newSession = await sessionModel.create({
+		// 	userId: newUser._id,
+		// 	hashedRefreshToken,
+		// });
 
 		logger.info("Auth: registerUser endpoint -> success", {
 			userId: newUser._id,
-			sessionId: newSession._id,
 		});
 
-		return {
-			accessToken,
-			refreshToken,
-		};
+		return newUser;
 	} catch (error) {
 		if (error instanceof BadRequestError) {
 			throw error;
@@ -135,6 +132,19 @@ const loginUser = async (payload: LoginUserDTO) => {
 
 			throw new BadRequestError(
 				"User with that username and email, doesn't exist",
+			);
+		}
+
+		// check if user is verified
+		if (!user.verified) {
+			logger.error("Auth: loginUser endpoint -> failure", {
+				error: "User is not verified",
+				username: payload.username,
+				email: payload.email,
+			});
+
+			throw new ForbiddenError(
+				"User with that username and email, is not verified",
 			);
 		}
 
@@ -193,7 +203,7 @@ const loginUser = async (payload: LoginUserDTO) => {
 			refreshToken,
 		};
 	} catch (error) {
-		if (error instanceof BadRequestError) {
+		if (error instanceof BadRequestError || error instanceof ForbiddenError) {
 			throw error;
 		} else {
 			logger.error("Auth: loginUser endpoint -> failure", error);
@@ -234,6 +244,19 @@ const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
 			});
 
 			throw new BadRequestError("User with that refresh token, doesn't exist");
+		}
+
+		// check if user is verified
+		if (!user.verified) {
+			logger.error("Auth: refreshAccessToken endpoint -> failure", {
+				error: "User is not verified",
+				username: user.username,
+				email: user.email,
+			});
+
+			throw new ForbiddenError(
+				"User with that username and email, is not verified",
+			);
 		}
 
 		// fetch the session
@@ -306,6 +329,31 @@ const logoutUser = async (payload: LogoutUserDTO) => {
 			serverConfig.REFRESH_SECRET_KEY,
 		) as DecodedJwtPayload;
 
+		// fetch the user
+		const user = await userModel.findById(decoded.userId);
+
+		if (!user) {
+			logger.error("Auth: logoutUser endpoint -> failure", {
+				error: "User doesn't exist",
+				id: decoded.userId,
+			});
+
+			throw new BadRequestError("User with that refresh token, doesn't exist");
+		}
+
+		// check if user is verified
+		if (!user.verified) {
+			logger.error("Auth: logoutUser endpoint -> failure", {
+				error: "User is not verified",
+				username: user.username,
+				email: user.email,
+			});
+
+			throw new ForbiddenError(
+				"User with that username and email, is not verified",
+			);
+		}
+
 		// find the session
 		const hashedRefreshToken = CryptoJS.SHA256(payload.token).toString();
 
@@ -368,6 +416,31 @@ const logoutUserFromAllSessions = async (
 			payload.token,
 			serverConfig.REFRESH_SECRET_KEY,
 		) as DecodedJwtPayload;
+
+		// fetch the user
+		const user = await userModel.findById(decoded.userId);
+
+		if (!user) {
+			logger.error("Auth: logoutUserFromAllSessions endpoint -> failure", {
+				error: "User doesn't exist",
+				id: decoded.userId,
+			});
+
+			throw new BadRequestError("User with that refresh token, doesn't exist");
+		}
+
+		// check if user is verified
+		if (!user.verified) {
+			logger.error("Auth: logoutUserFromAllSessions endpoint -> failure", {
+				error: "User is not verified",
+				username: user.username,
+				email: user.email,
+			});
+
+			throw new ForbiddenError(
+				"User with that username and email, is not verified",
+			);
+		}
 
 		// find all the relevant sessions session and revoke them
 		await sessionModel.updateMany(

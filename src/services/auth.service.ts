@@ -13,9 +13,9 @@ interface AuthUserResult {
 }
 
 const registerUser = async (payload: RegisterUserDTO) => {
-	// register the user and generate the token
-	const result = (await authRepository.registerUser(payload)) as AuthUserResult;
-	return result;
+	// register the user
+	const user = await authRepository.registerUser(payload);
+	return user;
 };
 
 const loginUser = async (payload: LoginUserDTO) => {
