@@ -297,7 +297,8 @@ const refreshAccessToken = async (payload: RefreshAccessTokenDTO) => {
 	} catch (error) {
 		if (
 			error instanceof UnauthorizedError ||
-			error instanceof BadRequestError
+			error instanceof BadRequestError ||
+			error instanceof ForbiddenError
 		) {
 			throw error;
 		} else {
@@ -383,7 +384,8 @@ const logoutUser = async (payload: LogoutUserDTO) => {
 	} catch (error) {
 		if (
 			error instanceof UnauthorizedError ||
-			error instanceof BadRequestError
+			error instanceof BadRequestError ||
+			error instanceof ForbiddenError
 		) {
 			throw error;
 		} else {
@@ -457,7 +459,9 @@ const logoutUserFromAllSessions = async (
 
 		logger.info("Auth: logoutUserFromAllSessions endpoint -> success");
 	} catch (error) {
-		if (error instanceof UnauthorizedError) {
+		if (error instanceof UnauthorizedError ||
+			error instanceof BadRequestError ||
+			error instanceof ForbiddenError) {
 			throw error;
 		} else {
 			logger.error(
