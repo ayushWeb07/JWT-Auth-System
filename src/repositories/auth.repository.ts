@@ -3,7 +3,9 @@ import type {
 	RegisterUserDTO,
 	RefreshAccessTokenDTO,
 	LogoutUserDTO,
-	LogoutUserFromAllSessionsDTO, SendOtpForVerificationDTO,
+	LogoutUserFromAllSessionsDTO,
+	SendOtpForVerificationDTO,
+	VerifyOtpDTO,
 } from "../dtos/auth.dto.ts";
 import { userModel } from "../database/models/user.model.ts";
 import { logger } from "../config/logger.config.ts";
@@ -17,9 +19,9 @@ import CryptoJS from "crypto-js";
 import { serverConfig } from "../config/index.ts";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import { sessionModel } from "../database/models/session.model.ts";
-import {otpModel} from "../database/models/otp.model.ts";
-import otpGenerator from "otp-generator"
-import {sendEmail} from "../services/mail.service.ts";
+import { otpModel } from "../database/models/otp.model.ts";
+import otpGenerator from "otp-generator";
+import { sendEmail } from "../services/mail.service.ts";
 
 interface DecodedJwtPayload extends JwtPayload {
 	userId: string;
@@ -462,9 +464,11 @@ const logoutUserFromAllSessions = async (
 
 		logger.info("Auth: logoutUserFromAllSessions endpoint -> success");
 	} catch (error) {
-		if (error instanceof UnauthorizedError ||
+		if (
+			error instanceof UnauthorizedError ||
 			error instanceof BadRequestError ||
-			error instanceof ForbiddenError) {
+			error instanceof ForbiddenError
+		) {
 			throw error;
 		} else {
 			logger.error(
@@ -493,9 +497,7 @@ const sendOtpForVerification = async (payload: SendOtpForVerificationDTO) => {
 				email: payload.email,
 			});
 
-			throw new BadRequestError(
-				"User with that email, doesn't exist",
-			);
+			throw new BadRequestError("User with that email, doesn't exist");
 		}
 
 		// check if user is already verified
@@ -505,21 +507,19 @@ const sendOtpForVerification = async (payload: SendOtpForVerificationDTO) => {
 				email: payload.email,
 			});
 
-			throw new ForbiddenError(
-				"User with that email, is already verified",
-			);
+			throw new ForbiddenError("User with that email, is already verified");
 		}
 
 		// generate and hash the otp
-		const otp= otpGenerator.generate(10);
+		const otp = otpGenerator.generate(10);
 		const hashedOtp = CryptoJS.SHA256(otp).toString();
 
 		// insert the otp into the db
 		await otpModel.insertOne({
 			userId: user._id,
 			userEmail: user.email,
-			hashedOtp
-		})
+			hashedOtp,
+		});
 
 		// send the otp verification mail
 		await sendEmail({
@@ -531,7 +531,7 @@ const sendOtpForVerification = async (payload: SendOtpForVerificationDTO) => {
 				app_name: "Acme Corp",
 				otp,
 			},
-		})
+		});
 
 		logger.info("Auth: sendOtpForVerification endpoint -> success", {
 			userId: user._id,
@@ -550,11 +550,83 @@ const sendOtpForVerification = async (payload: SendOtpForVerificationDTO) => {
 	}
 };
 
+const verifyOtp = async (payload: VerifyOtpDTO) => {
+	try {
+		// fetch the user
+		const user = await userModel.findOne({
+			email: payload.email,
+		});
+
+		if (!user) {
+			logger.error("Auth: verifyOtp endpoint -> failure", {
+				error: "User doesn't exist",
+				email: payload.email,
+			});
+
+			throw new BadRequestError("User with that email, doesn't exist");
+		}
+
+		// check if user is already verified
+		if (user.verified) {
+			logger.error("Auth: verifyOtp endpoint -> failure", {
+				error: "User is already verified",
+				email: payload.email,
+			});
+
+			throw new ForbiddenError("User with that email, is already verified");
+		}
+
+		// generate and hash the otp
+		const hashedOtp = CryptoJS.SHA256(payload.otp).toString();
+
+		// find the otp in the db
+		const existingOtp = await otpModel.findOne({
+			userId: user._id,
+			userEmail: user.email,
+			hashedOtp,
+		});
+
+		if (!existingOtp) {
+			logger.error("Auth: verifyOtp endpoint -> failure", {
+				error: "Invalid OTP",
+				email: user.email,
+			});
+
+			throw new BadRequestError("Invalid OTP has been provided");
+		}
+
+		// update user status to verified
+		user.verified = true;
+		await user.save();
+
+		// delete all the otps for the user
+		await otpModel.deleteMany({
+			userId: user._id,
+		});
+
+		logger.info("Auth: verifyOtp endpoint -> success", {
+			userId: user._id,
+		});
+	} catch (error) {
+		if (error instanceof BadRequestError || error instanceof ForbiddenError) {
+			throw error;
+		} else {
+			logger.error("Auth: verifyOtp endpoint -> failure", error);
+
+			throw new InternalServerError(
+				"Something went wrong while verifying the otp",
+				error instanceof Error ? error.stack : undefined,
+			);
+		}
+	}
+};
+
 export {
 	registerUser,
 	loginUser,
 	refreshAccessToken,
 	logoutUser,
 	logoutUserFromAllSessions,
-	sendOtpForVerification
+	sendOtpForVerification,
+	verifyOtp,
 };

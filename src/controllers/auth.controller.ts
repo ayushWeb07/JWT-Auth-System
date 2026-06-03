@@ -96,11 +96,21 @@ const sendOtpForVerification = async (req: Request, res: Response) => {
 	});
 };
 
+const verifyOtp = async (req: Request, res: Response) => {
+	await authService.verifyOtp(req.body);
+
+	res.status(StatusCodes.OK).json({
+		success: true,
+		message: "Your account has been successfully verified. Please login again",
+	});
+};
+
 export {
 	registerUser,
 	loginUser,
 	refreshAccessToken,
 	logoutUser,
 	logoutUserFromAllSessions,
-	sendOtpForVerification
+	sendOtpForVerification,
+	verifyOtp,
 };

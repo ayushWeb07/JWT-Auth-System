@@ -23,6 +23,16 @@ router.post("/logout", authController.logoutUser);
 
 router.post("/logout-all", authController.logoutUserFromAllSessions);
 
-router.post("/send-otp-for-verification", validateRequestBody(authValidator.sendOtpForVerificationSchema), authController.sendOtpForVerification);
+router.post(
+	"/send-otp-for-verification",
+	validateRequestBody(authValidator.sendOtpForVerificationSchema),
+	authController.sendOtpForVerification,
+);
+
+router.post(
+	"/verify-otp",
+	validateRequestBody(authValidator.verifyOtpSchema),
+	authController.verifyOtp,
+);
 
 export default router;

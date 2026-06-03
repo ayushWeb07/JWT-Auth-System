@@ -16,4 +16,14 @@ const sendOtpForVerificationSchema = z.object({
 	email: z.string().min(6).max(50),
 });
 
-export { registerSchema, loginSchema, sendOtpForVerificationSchema };
+const verifyOtpSchema = z.object({
+	email: z.string().min(6).max(50),
+	otp: z.string().length(10),
+});
+
+export {
+	registerSchema,
+	loginSchema,
+	sendOtpForVerificationSchema,
+	verifyOtpSchema,
+};
