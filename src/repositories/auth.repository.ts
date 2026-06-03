@@ -3,7 +3,7 @@ import type {
 	RegisterUserDTO,
 	RefreshAccessTokenDTO,
 	LogoutUserDTO,
-	LogoutUserFromAllSessionsDTO,
+	LogoutUserFromAllSessionsDTO, SendOtpForVerificationDTO,
 } from "../dtos/auth.dto.ts";
 import { userModel } from "../database/models/user.model.ts";
 import { logger } from "../config/logger.config.ts";
@@ -17,6 +17,9 @@ import CryptoJS from "crypto-js";
 import { serverConfig } from "../config/index.ts";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import { sessionModel } from "../database/models/session.model.ts";
+import {otpModel} from "../database/models/otp.model.ts";
+import otpGenerator from "otp-generator"
+import {sendEmail} from "../services/mail.service.ts";
 
 interface DecodedJwtPayload extends JwtPayload {
 	userId: string;
@@ -477,10 +480,81 @@ const logoutUserFromAllSessions = async (
 	}
 };
 
+const sendOtpForVerification = async (payload: SendOtpForVerificationDTO) => {
+	try {
+		// fetch the user
+		const user = await userModel.findOne({
+			email: payload.email,
+		});
+
+		if (!user) {
+			logger.error("Auth: sendOtpForVerification endpoint -> failure", {
+				error: "User doesn't exist",
+				email: payload.email,
+			});
+
+			throw new BadRequestError(
+				"User with that email, doesn't exist",
+			);
+		}
+
+		// check if user is already verified
+		if (user.verified) {
+			logger.error("Auth: sendOtpForVerification endpoint -> failure", {
+				error: "User is already verified",
+				email: payload.email,
+			});
+
+			throw new ForbiddenError(
+				"User with that email, is already verified",
+			);
+		}
+
+		// generate and hash the otp
+		const otp= otpGenerator.generate(10);
+		const hashedOtp = CryptoJS.SHA256(otp).toString();
+
+		// insert the otp into the db
+		await otpModel.insertOne({
+			userId: user._id,
+			userEmail: user.email,
+			hashedOtp
+		})
+
+		// send the otp verification mail
+		await sendEmail({
+			toMailAddress: user.email,
+			subject: "Complete Your Account Verification",
+			templateId: "otp-verification",
+			params: {
+				user_name: user.username,
+				app_name: "Acme Corp",
+				otp,
+			},
+		})
+
+		logger.info("Auth: sendOtpForVerification endpoint -> success", {
+			userId: user._id,
+		});
+	} catch (error) {
+		if (error instanceof BadRequestError || error instanceof ForbiddenError) {
+			throw error;
+		} else {
+			logger.error("Auth: sendOtpForVerification endpoint -> failure", error);
+
+			throw new InternalServerError(
+				"Something went wrong while sending otp for account verification",
+				error instanceof Error ? error.stack : undefined,
+			);
+		}
+	}
+};
+
 export {
 	registerUser,
 	loginUser,
 	refreshAccessToken,
 	logoutUser,
 	logoutUserFromAllSessions,
+	sendOtpForVerification
 };

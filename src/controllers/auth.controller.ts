@@ -87,10 +87,20 @@ const logoutUserFromAllSessions = async (req: Request, res: Response) => {
 	});
 };
 
+const sendOtpForVerification = async (req: Request, res: Response) => {
+	await authService.sendOtpForVerification(req.body);
+
+	res.status(StatusCodes.OK).json({
+		success: true,
+		message: "OTP has been successfully sent for verification",
+	});
+};
+
 export {
 	registerUser,
 	loginUser,
 	refreshAccessToken,
 	logoutUser,
 	logoutUserFromAllSessions,
+	sendOtpForVerification
 };

@@ -4,7 +4,7 @@ import type {
 	LogoutUserDTO,
 	LogoutUserFromAllSessionsDTO,
 	RefreshAccessTokenDTO,
-	RegisterUserDTO,
+	RegisterUserDTO, SendOtpForVerificationDTO,
 } from "../dtos/auth.dto.ts";
 
 interface AuthUserResult {
@@ -42,10 +42,16 @@ const logoutUserFromAllSessions = async (
 	await authRepository.logoutUserFromAllSessions(payload);
 };
 
+const sendOtpForVerification = async (payload: SendOtpForVerificationDTO) => {
+	// send otp for verification
+	await authRepository.sendOtpForVerification(payload)
+};
+
 export {
 	registerUser,
 	loginUser,
 	refreshAccessToken,
 	logoutUser,
 	logoutUserFromAllSessions,
+	sendOtpForVerification
 };

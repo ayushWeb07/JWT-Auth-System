@@ -13,7 +13,7 @@ const renderTemplateContent = async (
 	templateId: string,
 	params: Record<string, any>,
 ) => {
-	const fullPath = path.join(__dirname, "mailer", `${templateId}.hbs`);
+	const fullPath = path.join(__dirname, "mail", `${templateId}.hbs`);
 
 	try {
 		const templateContent = await fs.readFile(fullPath, { encoding: "utf8" });

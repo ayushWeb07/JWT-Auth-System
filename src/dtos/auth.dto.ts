@@ -21,3 +21,7 @@ export interface LogoutUserDTO {
 export interface LogoutUserFromAllSessionsDTO {
 	token: string | undefined;
 }
+
+export interface SendOtpForVerificationDTO {
+	email: string;
+}
